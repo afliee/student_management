@@ -2,10 +2,8 @@ package app.server;
 
 import app.db.Database;
 
-import java.io.DataInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.util.HashMap;
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -34,7 +32,7 @@ public class Server {
         while (true) {
             try {
                 waitCall();
-                receive();
+//                receive();
             } catch (Exception err) {
                 err.printStackTrace();
             }
@@ -48,6 +46,8 @@ public class Server {
         socket = server.accept();
         System.out.println("Connection accepted from " +
                 socket.getInetAddress().getHostName());
+        new EchoClientHandler(socket).start();
+
     }
 
     public void close() {
@@ -58,10 +58,26 @@ public class Server {
 
         }
     }
-
     public boolean connectDB(String hostname, String username, String password, String databaseName) {
         try {
 //            change type here soon
+            Database database = new Database(hostname, username, password, databaseName);
+            return database.connect() != null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean connectDB() {
+        try {
+//            change type here soon
+
+            String hostname = contrains.get("HOSTNAME");
+            String username = contrains.get("USERNAME");
+            String password = contrains.get("PASSWORD");
+            String databaseName = contrains.get("SERVER_NAME");
+
             Database database = new Database(hostname, username, password, databaseName);
             return database.connect() != null;
         } catch (Exception e) {
@@ -85,4 +101,60 @@ public class Server {
             throw new RuntimeException(e);
         }
     }
+
+
+    private class EchoClientHandler extends Thread {
+        private Socket clientSocket;
+        private PrintWriter out;
+        private BufferedReader in;
+
+        public EchoClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
+
+        public void run() {
+            try {
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                in = new BufferedReader(
+                        new InputStreamReader(clientSocket.getInputStream()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            String inputLine;
+            while (true) {
+                try {
+                    if (!((inputLine = in.readLine()) != null)) break;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(inputLine);
+                out.println(inputLine);
+                String[] arr = inputLine.split(":");
+                if (contrains.containsKey(arr[0])) {
+                    System.out.println("Contrains: " + contrains.get(arr[0]));
+                } else {
+                    out.println("No contrains");
+                    addContrains(arr[0], arr[1]);
+                }
+            }
+
+            try {
+                in.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            out.close();
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }
+

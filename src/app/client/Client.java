@@ -1,8 +1,6 @@
 package app.client;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 public class Client {
@@ -13,6 +11,9 @@ public class Client {
     private boolean is_started = false;
     private OutputStream outputStream;
     private DataOutputStream dataOutputStream;
+
+    private PrintWriter out;
+    private BufferedReader in;
 
     public Client(String hostname, int port, int serverPort) {
         this.hostname = hostname;
@@ -44,11 +45,24 @@ public class Client {
     public void connect() throws IOException {
         System.out.println("Connecting to " + hostname + ":" + port);
         socket = new Socket(hostname, port);
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         System.out.println("Connected to " + socket.getInetAddress().getHostName());
     }
 
-    public void send(String message) throws IOException {
+    public Client send(String message) throws IOException {
         dataOutputStream.writeUTF(message);
+//        dataOutputStream.flush();
+        return this;
+    }
+
+    public String sendMessage(String msg) throws IOException {
+        out.println(msg);
+        String resp = in.readLine();
+        return resp;
+    }
+
+    public void flush() throws IOException {
         dataOutputStream.flush();
     }
 }

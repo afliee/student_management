@@ -17,7 +17,7 @@ public class HomeUpdate extends JFrame{
     private Server server;
     private Client client;
     private boolean servered = false;
-
+    private static Client external_client = null;
     public HomeUpdate() {
         super("Home");
         setSize(new Dimension(500, 500));
@@ -44,10 +44,11 @@ public class HomeUpdate extends JFrame{
                     if (!error.getText().isEmpty()) {
                         error.setText("");
                     }
+
                     client = new Client(host, Integer.parseInt(port), getServer().getPort());
+                    external_client = client;
                     boolean is_start = client.start();
                     if (is_start) {
-                        sendData(new String[] {host, port});
                         ConnectDB connectFrame = new ConnectDB();
                         connectFrame.setVisible(true);
                         setVisible(false);
@@ -73,9 +74,10 @@ public class HomeUpdate extends JFrame{
 //        }
     }
 
-    public Client getClient() {
-        return this.client;
+    public static Client getClient() {
+        return external_client;
     }
+
     public Server getServer() throws IOException {
         return Server.getInstance();
     }
@@ -84,15 +86,6 @@ public class HomeUpdate extends JFrame{
         this.server = server;
     }
 
-    public void sendData(String[] data) {
-        for (int i = 0; i < data.length; i++) {
-            try {
-                client.send(data[i]);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
     public static void main(String[] args) {
         String isVisible;
         HomeUpdate home = new HomeUpdate();
