@@ -2,6 +2,9 @@ package app.server;
 
 import app.db.Database;
 
+import java.io.DataInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,6 +15,8 @@ public class Server {
     private ServerSocket server;
     private Socket socket;
     private static Server instance = null;
+
+    private HashMap<String ,String> contrains = new HashMap<>();
 
     private Server() throws IOException {
         this.server = new ServerSocket(PORT, BACKLOG);
@@ -29,6 +34,7 @@ public class Server {
         while (true) {
             try {
                 waitCall();
+                receive();
             } catch (Exception err) {
                 err.printStackTrace();
             }
@@ -55,11 +61,28 @@ public class Server {
 
     public boolean connectDB(String hostname, String username, String password, String databaseName) {
         try {
+//            change type here soon
             Database database = new Database(hostname, username, password, databaseName);
-            return database.connect();
+            return database.connect() != null;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public void addContrains(String key, String value) {
+        contrains.put(key, value);
+    }
+
+    public void receive() {
+        try {
+            InputStream inputStream = socket.getInputStream();
+            DataInputStream dataInputStream = new DataInputStream(inputStream);
+
+            String message = dataInputStream.readUTF();
+            System.out.println("The message sent from the socket was: " + message);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

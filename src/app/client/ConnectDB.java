@@ -73,9 +73,13 @@ public class ConnectDB extends JFrame {
                     if (!error.getText().isEmpty()) {
                         error.setText("");
                     }
+                    Client client = new HomeUpdate().getClient();
+
                     Server server = Server.getInstance();
                     if (server.connectDB(hostname, username, password, servername)) {
                         System.out.println("Connect to "+ servername +" successfully");
+                        InforPanel inforPanel = new InforPanel();
+                        inforPanel.setVisible(true);
                     } else {
                         error.setText("Can't connect to database");
                     }

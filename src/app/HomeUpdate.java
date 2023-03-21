@@ -14,18 +14,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 public class HomeUpdate extends JFrame{
-    private JPanel panel;
-    private JLabel lb1;
-    private JPanel intro;
-    private JPanel inputs;
-    private JPanel infor;
-    private JTextField tfPort;
-    private JTextField tfHostname;
-    private JButton btnConnect;
-    private JButton btnCancel;
-    private JPanel btns;
-    private JLabel error;
-    private JLabel require;
     private Server server;
     private Client client;
     private boolean servered = false;
@@ -59,6 +47,7 @@ public class HomeUpdate extends JFrame{
                     client = new Client(host, Integer.parseInt(port), getServer().getPort());
                     boolean is_start = client.start();
                     if (is_start) {
+                        sendData(new String[] {host, port});
                         ConnectDB connectFrame = new ConnectDB();
                         connectFrame.setVisible(true);
                         setVisible(false);
@@ -84,6 +73,9 @@ public class HomeUpdate extends JFrame{
 //        }
     }
 
+    public Client getClient() {
+        return this.client;
+    }
     public Server getServer() throws IOException {
         return Server.getInstance();
     }
@@ -92,6 +84,15 @@ public class HomeUpdate extends JFrame{
         this.server = server;
     }
 
+    public void sendData(String[] data) {
+        for (int i = 0; i < data.length; i++) {
+            try {
+                client.send(data[i]);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
     public static void main(String[] args) {
         String isVisible;
         HomeUpdate home = new HomeUpdate();
@@ -131,4 +132,19 @@ public class HomeUpdate extends JFrame{
                 new EmptyBorder(5, 20, 5, 20)
         );
     }
+    // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables  @formatter:off
+    // Generated using JFormDesigner Evaluation license - unknown
+    private JPanel panel;
+    private JPanel intro;
+    private JLabel require;
+    private JLabel lb1;
+    private JPanel inputs;
+    private JPanel infor;
+    private JTextField tfPort;
+    private JTextField tfHostname;
+    private JPanel btns;
+    private JButton btnConnect;
+    private JButton btnCancel;
+    private JLabel error;
+    // JFormDesigner - End of variables declaration  //GEN-END:variables  @formatter:on
 }
