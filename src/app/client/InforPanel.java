@@ -315,7 +315,6 @@ public class InforPanel extends JFrame {
                                 lbNotification.setForeground(Color.RED);
                                 clearText();
                             }
-//                            initPagination();
                         } catch (Exception ioException) {
                             ioException.printStackTrace();
                         }
@@ -405,7 +404,7 @@ public class InforPanel extends JFrame {
         previousButton = new JButton("Previous");
         nextButton = new JButton("Next");
 
-//        init combo box for pagination
+        // init combo box for pagination
         comboBox = new JComboBox();
         comboBox.addItem("5");
         comboBox.addItem("10");

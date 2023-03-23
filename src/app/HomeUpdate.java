@@ -66,7 +66,6 @@ public class HomeUpdate extends JFrame{
         setContentPane(panel);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
-        setVisible(true);
     }
 
     public static Client getClient() {
@@ -84,17 +83,6 @@ public class HomeUpdate extends JFrame{
     public static void main(String[] args) {
         String isVisible;
         HomeUpdate home = new HomeUpdate();
-//
-//        try {
-////            bytep encrypt = DES.getInstance().encrypt("1");
-////            System.out.println(new String(encrypt));
-////            System.out.println("decrypted: "+DES.getInstance().decrypt(encrypt.getBytes()));
-//            String encrypted = DES.getInstance().encrypt("1");
-//            System.out.println("encrypted: "+encrypted);
-//            System.out.println("decrypted: "+DES.getInstance().decrypt(encrypted));
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
 
         if (args.length > 0) {
             isVisible = args[0];
