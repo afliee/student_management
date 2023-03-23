@@ -15,6 +15,10 @@ public class Student {
         this.englishScore = englishScore;
     }
 
+    public Student() {
+
+    }
+
     public String getId() {
         return id;
     }
@@ -71,7 +75,7 @@ public class Student {
     }
 
     public double getAverageScore() {
-        return (mathScore + literatureScore + englishScore) / 3;
+        return Math.round((mathScore + literatureScore + englishScore) / 3 * 100) / 100.0;
     }
 
     public String getGrade() {

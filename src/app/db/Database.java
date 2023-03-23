@@ -10,7 +10,7 @@ public class Database {
     private String databaseName;
     private Connection connection;
     private Statement statement;
-    private boolean is_connected;
+    private boolean is_connected = false;
     public Database(String hostname, String userName, String password, String databaseName) {
         this.hostname = hostname;
         this.userName = userName;
@@ -55,6 +55,16 @@ public class Database {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void disconnect() {
+        try {
+            this.connection.close();
+            System.out.println("Disconnected from database " + databaseName);
+            is_connected = false;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

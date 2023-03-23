@@ -1,7 +1,6 @@
 package app.client;
 
 import app.HomeUpdate;
-import app.db.Database;
 import app.server.Server;
 import app.ui.ButtonGradient;
 import app.ui.RoundedPasswordField;
@@ -52,7 +51,7 @@ public class ConnectDB extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 HomeUpdate homeUpdate = new HomeUpdate();
-                homeUpdate.main(new String[] {"true"});
+                homeUpdate.main(new String[]{"true"});
                 setVisible(false);
             }
         });
@@ -64,7 +63,7 @@ public class ConnectDB extends JFrame {
                 String password = tfPassword.getText();
                 String servername = tfServername.getText();
 
-                if (hostname.isEmpty() || username.isEmpty()  || servername.isEmpty()) {
+                if (hostname.isEmpty() || username.isEmpty() || servername.isEmpty()) {
                     error.setText("Please enter all information");
                     return;
                 }
@@ -73,17 +72,22 @@ public class ConnectDB extends JFrame {
                     if (!error.getText().isEmpty()) {
                         error.setText("");
                     }
-
                     Server server = Server.getInstance();
+
                     Client client = HomeUpdate.getClient();
-                    client.sendMessage("HOSTNAME:"+hostname);
-                    client.sendMessage("USERNAME:"+username);
-                    client.sendMessage("PASSWORD:"+password);
-                    client.sendMessage("SERVER_NAME:"+servername);
+
+                    client.sendMessage("PASSWORD->" + password);
+                    client.sendMessage("HOSTNAME->" + hostname);
+                    client.sendMessage("USERNAME->" + username);
+                    client.sendMessage("SERVER_NAME->" + servername);
+
+                    System.out.println(String.join("", servername, password, hostname, username));
+
                     if (server.connectDB()) {
-                        System.out.println("Connect to "+ servername +" successfully");
+                        System.out.println("Connect to " + servername + " successfully");
                         InforPanel inforPanel = new InforPanel();
                         inforPanel.setVisible(true);
+                        setVisible(false);
                     } else {
                         error.setText("Can't connect to database");
                     }

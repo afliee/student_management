@@ -12,7 +12,8 @@ public class StudentTableModel extends AbstractTableModel {
             "Name",
             "Math Score",
             "Literure Score",
-            "English Score"
+            "English Score",
+            "Average Score"
     };
 
     public StudentTableModel(ArrayList<Student> students) {
@@ -25,7 +26,7 @@ public class StudentTableModel extends AbstractTableModel {
 
     public void save(Student student) {
         students.add(student);
-        fireTableDataChanged();
+        fireTableRowsInserted(getRowCount() - 1, getRowCount() - 1);
     }
 
     public void update(Student student, int index) {
@@ -35,7 +36,16 @@ public class StudentTableModel extends AbstractTableModel {
 
     public void delete(int index) {
         students.remove(index);
-        fireTableDataChanged();
+        fireTableRowsDeleted(index, index);
+    }
+
+    public void edit(int index, Student product) {
+        students.set(index, product);
+        fireTableRowsUpdated(index, index);
+    }
+
+    public String getColumnName(int column) {
+        return HEADER[column];
     }
 
     @Override
@@ -62,6 +72,8 @@ public class StudentTableModel extends AbstractTableModel {
                 return student.getLiteratureScore();
             case 4:
                 return student.getEnglishScore();
+            case 5:
+                return student.getAverageScore();
         }
         return null;
     }

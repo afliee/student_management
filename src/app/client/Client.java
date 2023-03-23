@@ -52,17 +52,30 @@ public class Client {
 
     public Client send(String message) throws IOException {
         dataOutputStream.writeUTF(message);
-//        dataOutputStream.flush();
         return this;
     }
 
-    public String sendMessage(String msg) throws IOException {
-        out.println(msg);
-        String resp = in.readLine();
+    public String sendMessage(String msg) {
+        String resp = null;
+        try {
+            out.println(msg);
+            resp = in.readLine();
+            System.out.println("Client received: " + resp);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return resp;
     }
 
     public void flush() throws IOException {
         dataOutputStream.flush();
+    }
+
+    public void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
