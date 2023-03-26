@@ -7,6 +7,7 @@ import app.service.StudentService;
 
 import java.io.*;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,7 +21,7 @@ public class Server {
     private Connection connection;
     private StudentService studentService;
     private HashMap<String, String> contrains = new HashMap<>();
-
+    private ArrayList<Student> students = new ArrayList<>();
     private Server() throws IOException {
         this.server = new ServerSocket(PORT, BACKLOG);
 //        studentService = StudentService.getInstance();
@@ -187,12 +188,26 @@ public class Server {
                         break;
                     }
                     case "file": {
-                        String infors = hanlde_file();
-                        if (infors != null) {
-                            String[] args = infors.split(" ");
-                            Student student = new Student(args[0], args[1], Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]));
-                            out.println(student.toCSV());
-//                            out.println("true");
+                        boolean is_success = hanlde_file();
+                        if (is_success) {
+                            out.println("true");
+                        } else {
+                            out.println("false");
+                        }
+//                        if (infors != null) {
+//                            String[] args = infors.split(" ");
+//                            Student student = new Student(args[0], args[1], Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]));
+//                            out.println(student.toCSV());
+////                            out.println("true");
+//                        } else {
+//                            out.println("false");
+//                        }
+                        break;
+                    }
+                    case "submitAll": {
+                        boolean is_success = submitAll();
+                        if (is_success) {
+                            out.println("true");
                         } else {
                             out.println("false");
                         }
@@ -298,29 +313,43 @@ public class Server {
         }
     }
 
-    private String hanlde_file() {
+    private boolean hanlde_file() {
         try {
-            String path = DES.getInstance().decrypt(contrains.get("PATH"));
-            File file = new File(path);
+            String infors = contrains.get("STUDENT");
+            contrains.clear();
 
-            FileReader reader = new FileReader(file);
-            BufferedReader bufferedReader = new BufferedReader(reader);
+            String innerInfor = infors.substring(infors.indexOf("[") + 1, infors.indexOf("]"));
+            String[] args = innerInfor.split(",");
+            String id = DES.getInstance().decrypt(args[0]);
+            String name = DES.getInstance().decrypt(args[1]);
+            String mathScore = DES.getInstance().decrypt(args[2]);
+            String literatureScore = DES.getInstance().decrypt(args[3]);
+            String englishScore = DES.getInstance().decrypt(args[4]);
+            System.out.println("Server perform file : " + id + " " + name + " " + mathScore + " " + literatureScore + " " + englishScore);
 
-            int row = 0;
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                row++;
-                if (row == 2) {
-                    return null;
-                }
-
-                System.out.println(line);
-                break;
-            }
-            return line;
+            Student student = new Student(id, name, Double.parseDouble(mathScore), Double.parseDouble(literatureScore), Double.parseDouble(englishScore));
+            students.add(student);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return false;
+        }
+    }
+
+    private boolean submitAll() {
+        try {
+            studentService = StudentService.getInstance();
+            for (Student student : students) {
+                if (studentService.findOne(student.getId()) != null) {
+                    return false;
+                }
+                studentService.save(student);
+            }
+            students.clear();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

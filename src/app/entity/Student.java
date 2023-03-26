@@ -61,13 +61,8 @@ public class Student {
 
     @Override
     public String toString() {
-        return "Student{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", mathScore=" + mathScore +
-                ", literatureScore=" + literatureScore +
-                ", englishScore=" + englishScore +
-                '}';
+//        [?,?,?,?]
+        return "[" + id + "," + name + "," + mathScore + "," + literatureScore + "," + englishScore + "]";
     }
 
     public String toCSV() {

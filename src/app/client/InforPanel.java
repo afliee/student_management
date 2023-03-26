@@ -15,12 +15,9 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.List;
 
 public class InforPanel extends JFrame {
     private JPanel panel;
@@ -52,13 +49,18 @@ public class InforPanel extends JFrame {
     private JTextField tfAverage;
     private JLabel lbNotification;
     private JCheckBox unBlockCheckBox;
+    private JButton btnNext;
+    private JButton btnPre;
+    private JPanel studentPagination;
     private JTableHeader tableHeader;
     private StudentService studentService;
     private StudentTableModel studentTableModel;
+    private ArrayList<Student> students = new ArrayList<>();
     Integer page = 1;
     Integer rowCountPerPage = 5;
     Integer totalPage = 1;
     Integer totalData = 0;
+    Integer studentPosition = 0;
     public InforPanel() {
         super("InforPanel");
         setSize(new Dimension(500, 500));
@@ -87,29 +89,57 @@ public class InforPanel extends JFrame {
 
                     Client client = HomeUpdate.getClient();
                     try {
-                        String pathEncrypted = DES.getInstance().encrypt(file.getAbsolutePath());
-                        client.sendMessage("PATH->"+pathEncrypted);
-                        String studentToCSV = client.sendMessage("file");
-                        System.out.println(studentToCSV);
+                        students = readfile(file);
+                        System.out.println(students.toString());
 
-                        String[] inforFields = studentToCSV.split(",");
-                        clearText();
+                        if (students.size() == 1) {
+                            Student student = students.get(0);
+                            tfId.setText(student.getId());
+                            tfname.setText(student.getName());
+                            tfMathscore.setText(String.valueOf(student.getMathScore()));
+                            tfLiterurescore.setText(String.valueOf(student.getLiteratureScore()));
+                            tfEnglishscore.setText(String.valueOf(student.getEnglishScore()));
+                            tfAverage.setText(String.valueOf(student.getAverageScore()));
+                            studentPagination.setVisible(false);
+                        } else {
+                            studentPagination.setVisible(true);
+                            Student firstStudent = students.get(0);
+                            renderStudentInfo(firstStudent);
+                        }
 
-                        List<String> infors = Arrays.asList(inforFields);
-
-                        String id = infors.get(0);
-                        String name = infors.get(1);
-                        Double mathScore = Double.parseDouble(infors.get(2));
-                        Double literatureScore = Double.parseDouble(infors.get(3));
-                        Double englishScore = Double.parseDouble(infors.get(3));
-                        Double averageScore = Math.round((mathScore + literatureScore + englishScore ) / 3 * 100) / 100.0;
-
-                        tfId.setText(id);
-                        tfname.setText(name);
-                        tfMathscore.setText(mathScore.toString());
-                        tfLiterurescore.setText(literatureScore.toString());
-                        tfEnglishscore.setText(englishScore.toString());
-                        tfAverage.setText(averageScore.toString());
+//                        String pathEncrypted = DES.getInstance().encrypt(file.getAbsolutePath());
+//
+//                        String extention = file.getName().substring(file.getName().lastIndexOf("."));
+//
+//                        if (extention.equals(".csv")) {
+//                            client.sendMessage("CSV->"+pathEncrypted);
+//                        } else if (extention.equals(".txt")) {
+//                            client.sendMessage("TXT->"+pathEncrypted);
+//                        } else {
+//                            client.sendMessage("PATH->"+pathEncrypted);
+//                        }
+//
+//                        String studentToCSV = client.sendMessage("file");
+//                        System.out.println(studentToCSV);
+//
+//                        String[] inforFields = studentToCSV.split(",");
+//                        clearText();
+//
+//                        List<String> infors = Arrays.asList(inforFields);
+//
+//                        String id = infors.get(0);
+//                        String name = infors.get(1);
+//                        Double mathScore = Double.parseDouble(infors.get(2));
+//                        Double literatureScore = Double.parseDouble(infors.get(3));
+//                        Double englishScore = Double.parseDouble(infors.get(3));
+//                        Double averageScore = Math.round((mathScore + literatureScore + englishScore ) / 3 * 100) / 100.0;
+//
+//                        tfId.setText(id);
+//                        tfname.setText(name);
+//                        tfMathscore.setText(mathScore.toString());
+//                        tfLiterurescore.setText(literatureScore.toString());
+//                        tfEnglishscore.setText(englishScore.toString());
+//                        tfAverage.setText(averageScore.toString());
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -271,39 +301,88 @@ public class InforPanel extends JFrame {
         btnSubmit.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String id = tfId.getText();
-                String name = tfname.getText();
-                String mathScore = tfMathscore.getText();
-                String literureScore = tfLiterurescore.getText();
-                String englishScore = tfEnglishscore.getText();
-                String average = tfAverage.getText();
-                if (id.isEmpty() || name.isEmpty() || mathScore.isEmpty() || literureScore.isEmpty() || englishScore.isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Please fill all the fields");
+                if (tfFileinfor.getText().isEmpty()) {
+                    String id = tfId.getText();
+                    String name = tfname.getText();
+                    String mathScore = tfMathscore.getText();
+                    String literureScore = tfLiterurescore.getText();
+                    String englishScore = tfEnglishscore.getText();
+                    String average = tfAverage.getText();
+                    if (id.isEmpty() || name.isEmpty() || mathScore.isEmpty() || literureScore.isEmpty() || englishScore.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "Please fill all the fields");
+                    } else {
+                        int confirm = JOptionPane.showConfirmDialog(null, "Are you sure to submit this student?");
+                        if (confirm == JOptionPane.YES_OPTION) {
+                            try {
+                                boolean is_valid = validateScore();
+                                if (!is_valid) {
+                                    JOptionPane.showMessageDialog(null, "Please fill all the fields");
+                                    return;
+                                }
+                                Client client = HomeUpdate.getClient();
+
+                                String idEncrypt = DES.getInstance().encrypt(id);
+                                String nameEncrypt = DES.getInstance().encrypt(name);
+                                String mathScoreEncrypt = DES.getInstance().encrypt(mathScore);
+                                String literureScoreEncrypt = DES.getInstance().encrypt(literureScore);
+                                String englishScoreEncrypt = DES.getInstance().encrypt(englishScore);
+
+                                client.sendMessage("ID->"+ idEncrypt);
+                                client.sendMessage("NAME->"+ nameEncrypt);
+                                client.sendMessage("MATH->"+ mathScoreEncrypt);
+                                client.sendMessage("LITERURE->"+ literureScoreEncrypt);
+                                client.sendMessage("ENGLISH->"+ englishScoreEncrypt);
+                                String result = client.sendMessage("submit");
+                                System.out.println("Result : "+result);
+
+                                boolean is_success = Boolean.parseBoolean(result);
+                                if (is_success) {
+                                    lbNotification.setText("Submit successfully");
+                                    lbNotification.setForeground(Color.decode("#539165"));
+                                    initPagination();
+                                    clearText();
+                                } else {
+                                    lbNotification.setText("Submit failed");
+                                    lbNotification.setForeground(Color.RED);
+                                    clearText();
+                                }
+                            } catch (Exception ioException) {
+                                ioException.printStackTrace();
+                            }
+                        }
+                    }
                 } else {
-                    int confirm = JOptionPane.showConfirmDialog(null, "Are you sure to submit this student?");
+                    toggleEditable(false);
+                    int confirm = JOptionPane.showConfirmDialog(null, "Are you sure to submit all student in this file: " + tfFileinfor.getText());
                     if (confirm == JOptionPane.YES_OPTION) {
                         try {
-                            boolean is_valid = validateScore();
-                            if (!is_valid) {
-                                JOptionPane.showMessageDialog(null, "Please fill all the fields");
-                                return;
-                            }
                             Client client = HomeUpdate.getClient();
+                            for (Student student : students) {
+                                boolean is_valid = validateScore(student);
+                                if (!is_valid) {
+                                    JOptionPane.showMessageDialog(null, "Exist student with invalid score");
+                                    return;
+                                }
+                                String idEncrypt = DES.getInstance().encrypt(student.getId());
+                                String nameEncrypt = DES.getInstance().encrypt(student.getName());
+                                String mathScoreEncrypt = DES.getInstance().encrypt(String.valueOf(student.getMathScore()));
+                                String literureScoreEncrypt = DES.getInstance().encrypt(String.valueOf(student.getLiteratureScore()));
+                                String englishScoreEncrypt = DES.getInstance().encrypt(String.valueOf(student.getEnglishScore()));
 
-                            String idEncrypt = DES.getInstance().encrypt(id);
-                            String nameEncrypt = DES.getInstance().encrypt(name);
-                            String mathScoreEncrypt = DES.getInstance().encrypt(mathScore);
-                            String literureScoreEncrypt = DES.getInstance().encrypt(literureScore);
-                            String englishScoreEncrypt = DES.getInstance().encrypt(englishScore);
+                                String template = "STUDENT->[%s,%s,%s,%s,%s]";
+                                String message = String.format(template, idEncrypt, nameEncrypt, mathScoreEncrypt, literureScoreEncrypt, englishScoreEncrypt);
+                                client.sendMessage(message);
 
-                            client.sendMessage("ID->"+ idEncrypt);
-                            client.sendMessage("NAME->"+ nameEncrypt);
-                            client.sendMessage("MATH->"+ mathScoreEncrypt);
-                            client.sendMessage("LITERURE->"+ literureScoreEncrypt);
-                            client.sendMessage("ENGLISH->"+ englishScoreEncrypt);
-                            String result = client.sendMessage("submit");
-                            System.out.println("Result : "+result);
-
+                                String result = client.sendMessage("file");
+                                boolean is_success = Boolean.parseBoolean(result);
+                                if (!is_success) {
+                                    lbNotification.setText("Submit failed");
+                                    lbNotification.setForeground(Color.RED);
+                                    clearText();
+                                    return;
+                                }
+                            }
+                            String result = client.sendMessage("submitAll");
                             boolean is_success = Boolean.parseBoolean(result);
                             if (is_success) {
                                 lbNotification.setText("Submit successfully");
@@ -320,7 +399,7 @@ public class InforPanel extends JFrame {
                         }
                     }
                 }
-            }
+             }
         });
 
         tableDataset.addMouseListener(new MouseAdapter() {
@@ -354,9 +433,35 @@ public class InforPanel extends JFrame {
                 }
             }
         });
-        tableDataset.addComponentListener(new ComponentAdapter() {
+
+        btnPre.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                studentPosition--;
+                if (studentPosition == 0) {
+                    btnPre.setEnabled(false);
+                } else {
+                    btnNext.setEnabled(true);
+                }
+                Student student = students.get(studentPosition);
+                renderStudentInfo(student);
+            }
         });
-        tableDataset.addComponentListener(new ComponentAdapter() {
+
+        btnNext.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(studentPosition);
+                studentPosition++;
+
+                if (studentPosition == students.size() - 1) {
+                    btnNext.setEnabled(false);
+                } else {
+                    btnPre.setEnabled(true);
+                }
+                Student student = students.get(studentPosition);
+                renderStudentInfo(student);
+            }
         });
     }
 
@@ -399,10 +504,16 @@ public class InforPanel extends JFrame {
         tfSearch = new RoundTextField("", 15);
         tfSearch.setUI(new HintTextFieldUI("Search", true));
 
+        studentPagination = new JPanel();
+        studentPagination.setVisible(false);
+
         // init buttons
         firstButton = new JButton("First");
         previousButton = new JButton("Previous");
         nextButton = new JButton("Next");
+        btnNext = new JButton("Next");
+        btnPre = new JButton("Previous");
+        btnPre.setEnabled(false);
 
         // init combo box for pagination
         comboBox = new JComboBox();
@@ -506,6 +617,7 @@ public class InforPanel extends JFrame {
         tfLiterurescore.setText("");
         tfEnglishscore.setText("");
         tfAverage.setText("");
+        tfFileinfor.setText("");
     }
 
     private boolean validateScore() {
@@ -531,6 +643,50 @@ public class InforPanel extends JFrame {
             lbNotification.setForeground(Color.RED);
             return false;
         }
+
+        if (Double.valueOf(mathScore) > 10 || Double.valueOf(mathScore) < 0) {
+            lbNotification.setText("Math score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
+
+        if (Double.valueOf(literureScore) > 10 || Double.valueOf(literureScore) < 0) {
+            lbNotification.setText("Literure score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
+
+        if (Double.valueOf(englishScore) > 10 || Double.valueOf(englishScore) < 0) {
+            lbNotification.setText("English score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validateScore(Student student) {
+//        check three field score is numberic
+        double mathScore = student.getMathScore();
+        double literureScore = student.getLiteratureScore();
+        double englishScore = student.getEnglishScore();
+
+        if (mathScore > 10 || mathScore < 0) {
+            lbNotification.setText("Math score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
+
+        if (literureScore > 10 || literureScore < 0) {
+            lbNotification.setText("Literure score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
+
+        if (englishScore > 10 || englishScore < 0) {
+            lbNotification.setText("English score must be between 0 and 10");
+            lbNotification.setForeground(Color.RED);
+            return false;
+        }
         return true;
     }
 
@@ -540,5 +696,64 @@ public class InforPanel extends JFrame {
         tfMathscore.setEditable(is_edit);
         tfLiterurescore.setEditable(is_edit);
         tfEnglishscore.setEditable(is_edit);
+    }
+
+    private ArrayList<Student> readfile(File file) throws FileNotFoundException {
+        FileReader fileReader = new FileReader(file);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        String extention = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+
+        ArrayList<Student> students = new ArrayList<>();
+
+//                if file is csv
+        if (extention.equals("csv")) {
+            try {
+                String line = bufferedReader.readLine();
+                while (line != null) {
+                    String[] data = line.split(",");
+                    Student student = new Student();
+                    student.setId(data[0]);
+                    student.setName(data[1]);
+                    student.setMathScore(Double.valueOf(data[2]));
+                    student.setLiteratureScore(Double.valueOf(data[3]));
+                    student.setEnglishScore(Double.valueOf(data[4]));
+                    students.add(student);
+                    line = bufferedReader.readLine();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if (extention.equals("txt")) {
+            try {
+                String line = bufferedReader.readLine();
+                while (line != null) {
+                    String[] data = line.split(" ");
+                    Student student = new Student();
+                    student.setId(data[0]);
+                    student.setName(data[1]);
+                    student.setMathScore(Double.valueOf(data[2]));
+                    student.setLiteratureScore(Double.valueOf(data[3]));
+                    student.setEnglishScore(Double.valueOf(data[4]));
+                    students.add(student);
+                    line = bufferedReader.readLine();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "File must be csv or txt");
+            lbNotification.setText("File must be csv or txt");
+            lbNotification.setForeground(Color.RED);
+        }
+        return students;
+    }
+
+    private void renderStudentInfo(Student student) {
+        tfId.setText(student.getId());
+        tfname.setText(student.getName());
+        tfMathscore.setText(String.valueOf(student.getMathScore()));
+        tfLiterurescore.setText(String.valueOf(student.getLiteratureScore()));
+        tfEnglishscore.setText(String.valueOf(student.getEnglishScore()));
+        tfAverage.setText(String.valueOf(student.getAverageScore()));
     }
 }
